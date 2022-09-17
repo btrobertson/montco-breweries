@@ -230,7 +230,7 @@
                 }).addTo(map);
          
             });
-        }).done(function() {
+        }).done(function(parksLayer) {
             var trailLayer = $.getJSON(trails, function(data) {
                 //console.log(data);
 				var ends = [];
@@ -246,7 +246,7 @@
                 }).addTo(map);
 
 			
-			geoJsonLayers.trailLayer.eachLayer(function(layer) {
+			/* geoJsonLayers.trailLayer.eachLayer(function(layer) {
 				var trail = {
 					begin: layer.feature.geometry.coordinates[0],
 					end: layer.feature.geometry.coordinates[layer.feature.geometry.coordinates.length-1],
@@ -257,16 +257,17 @@
 				addToObj(trailPoints, 'trails');
 
 				
-			});
+			}); */
 			
 
             });
 			
 		
-        }).done(function() {
+        }).done(function(parksLayer) {
             var breweryLayer = $.getJSON(breweries, function(data) {
+				var trailLayer;
                 //add neighboring counties to data layer in another color - won't use in proximity calc
-                    geoJsonLayers.breweryLayer = L.geoJson(data, {
+                    breweries= L.geoJson(data, {
                         pointToLayer: function (feature, latlng) {
                             return L.circleMarker(latlng);
                         },
@@ -280,8 +281,48 @@
                             }
                         }
                     }).addTo(map);
+					var trailpoints = [];
+					var t = $.getJSON(trails, function(data) {
+						trailLayer = L.geoJson(data);
+						
+						trailLayer.eachLayer(function(layer){
+							var trail = {
+							begin: layer.feature.geometry.coordinates[0],
+							end: layer.feature.geometry.coordinates[layer.feature.geometry.coordinates.length-1],
+							id: layer.feature.properties.OBJECTID,
+							name: layer.feature.properties.Name
+						}
+						trailPoints.push(trail);
+						
+					});
 					
+					});
+					var markers = [];
+					
+					breweries.on('click', function(e) {
+						removeMarkers(markers);
+						for(i=0; i < trailPoints.length; i++) {
+							var distance = e.latlng.distanceTo(L.latLng(trailPoints[i].begin[1], trailPoints[i].begin[0])) / 1000;
+							
+							if(distance > 5) {
+								/* layer.setStyle({
+								fillOpacity: .1
+								}); */
+								console.log(distance);
+							} else {
+								/* layer.setStyle({
+								fillOpacity: 1
+								}); */
+								markers.push(L.circleMarker(L.latLng(trailPoints[i].begin[1], trailPoints[i].begin[0])));
+								markers[markers.length-1].addTo(map);
+							}
+
+						}
+          
+      
+					});
             });
+			
 			
     });
 
@@ -298,8 +339,16 @@
 			geoJsonLayers[name] = obj;
 		}
 
+		function removeMarkers(markers){
+			for(var i=0; i < markers.length; i++) {
+				markers[i].remove();
+			}
+		}
+
         map.on('click', function(e) {
         radiusCircle.setLatLng(e.latlng).addTo(map);
+
+		
     });
 
     </script>
