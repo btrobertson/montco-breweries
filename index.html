@@ -245,19 +245,7 @@
 				
                 }).addTo(map);
 
-			
-			/* geoJsonLayers.trailLayer.eachLayer(function(layer) {
-				var trail = {
-					begin: layer.feature.geometry.coordinates[0],
-					end: layer.feature.geometry.coordinates[layer.feature.geometry.coordinates.length-1],
-					id: layer.feature.properties.OBJECTID,
-					name: layer.feature.properties.Name
-				}
-				trailPoints.push(trail);
-				addToObj(trailPoints, 'trails');
-
-				
-			}); */
+		
 			
 
             });
@@ -284,40 +272,30 @@
 					var trailpoints = [];
 					var t = $.getJSON(trails, function(data) {
 						trailLayer = L.geoJson(data);
-						
-						trailLayer.eachLayer(function(layer){
-							var trail = {
-							begin: layer.feature.geometry.coordinates[0],
-							end: layer.feature.geometry.coordinates[layer.feature.geometry.coordinates.length-1],
-							id: layer.feature.properties.OBJECTID,
-							name: layer.feature.properties.Name
-						}
-						trailPoints.push(trail);
-						
-					});
 					
 					});
 					var markers = [];
 					
 					breweries.on('click', function(e) {
 						removeMarkers(markers);
-						for(i=0; i < trailPoints.length; i++) {
-							var distance = e.latlng.distanceTo(L.latLng(trailPoints[i].begin[1], trailPoints[i].begin[0])) / 1000;
-							
-							if(distance > 5) {
-								/* layer.setStyle({
-								fillOpacity: .1
-								}); */
-								console.log(distance);
-							} else {
-								/* layer.setStyle({
-								fillOpacity: 1
-								}); */
-								markers.push(L.circleMarker(L.latLng(trailPoints[i].begin[1], trailPoints[i].begin[0])));
-								markers[markers.length-1].addTo(map);
+						trailLayer.eachLayer(function(layer){
+							var coords = layer.feature.geometry.coordinates[0];
+							var distance = e.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;
+							if(distance < 5) {
+								
+								 layer.setStyle({
+									color: 'yellow'
+								}); 
+								var content = `<p>${layer.feature.properties.Name}</p>`;
+								//markers.push(L.circleMarker(L.latLng(coords[1], coords[0]), {radius:2}));
+								//markers[markers.length-1].bindTooltip(content).addTo(map);
+								layer.bindTooltip(content).addTo(map);
+        						
+        					
 							}
 
-						}
+						});
+					
           
       
 					});
@@ -346,7 +324,7 @@
 		}
 
         map.on('click', function(e) {
-        radiusCircle.setLatLng(e.latlng).addTo(map);
+        //radiusCircle.setLatLng(e.latlng).addTo(map);
 
 		
     });
