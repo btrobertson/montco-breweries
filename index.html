@@ -145,10 +145,11 @@
     src="https://code.jquery.com/jquery-3.6.1.min.js"
     integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
     crossorigin="anonymous"></script>
+
 	<script>
-		var options = {
+        var options = {
 			center: [40.19690490954576, -75.3694704520256],
-			zoom: 10,
+			zoom: 10.5,
 			zoomControl: false
 		}
 
@@ -180,84 +181,128 @@
 		};
 		// requests some map tiles
 		var tiles = L.tileLayer(basemap_url, basemap_attributes);
+        map.addLayer(tiles);
 
-        var countyLayer = $.getJSON("data/county_boundaries.json", function(data) {
-                //console.log(data);
-                var dataLayer = L.geoJson(data, {
-                    style: function(feature) {
-                    return {
-                        color: '#ddd',
-                        weight: 1,
-                        fillOpacity: 1,
-                        fillColor: 'transparent'
-                    };
-                    }
-                }).addTo(map);
-            });
-		map.addLayer(tiles);
+        //data files
+        var breweries = 'data/montco_breweries.json';
+        var parks = 'data/Montgomery_County_Parks.json';
+        var trails = 'data/Montgomery_County_Trails.json';
+        var counties = 'data/county_boundaries.json';
 
-        $.when(countyLayer).done(function () {
-            var parksLayer = $.getJSON("data/Montgomery_County_Parks.json", function(data) {
-                //console.log(data);
-                var dataLayer = L.geoJson(data, {
-                    style: function(feature) {
-                    return {
-                        color: '#008040',
-                        weight: .5,
-                        fillOpacity: .5,
-                        fillColor: '#008040'
-                    };
-                }
-                }).addTo(map);
-
-            });
-
-            $.when(parksLayer).done(function () {
-
-                var trailsLayer = $.getJSON("data/Montgomery_County_Trails.json", function(data) {
-                //console.log(data);
-                var dataLayer = L.geoJson(data, {
-                    style: function(feature) {
-                    return {
-                        color: '#476b6b',
-                        weight: 1,
-                    };
-                    }
-                }).addTo(map);
-
-                });
-            });
-
-            var breweryLayer = $.getJSON("data/montco_breweries.json", function(data) {
-                //add neighboring counties to data layer in another color - won't use in proximity calc
-                var dataLayer = L.geoJson(data, {
-                    pointToLayer: function (feature, latlng) {
-                        return L.circleMarker(latlng);
-                    },
-                    style: function(feature) {
-                        return {
-                            color: '#ffcc00',
-                            fillColor:'#ffcc00',
-                            weight: .5,
-                            radius: 3
-                        }
-			        }
-                }).addTo(map);
-
-            });
-     
+        var geoJsonLayers = {};
+		var trailPoints = [];
+        var radiusCircle = L.circle([0, 0], 5000, {
+            fillColor: 'pink',
+            fillOpacity: .5,
+            color: 'yellow',
+            opacity: .3,
+            stroke: false,
+            weight: 3,
+            interactive: false //allows users to click through the circle
         });
 
-        //create tooltips
+        var countyLayer = $.getJSON(counties, function(data) {
+            var dataLayer = L.geoJson(data, {
+                    style: function(feature) {
+                        return {
+                            color: '#ddd',
+                            weight: 1,
+                            fillOpacity: 1,
+                            fillColor: 'transparent'
+                        };
+                    }
+                }).addTo(map);
+        });
 
+        $.when(countyLayer).done(function () {
+            var parksLayer = $.getJSON(parks, function(data) {
+                //console.log(data);
+                geoJsonLayers.parkLayer = L.geoJson(data, {
+                    style: function(feature) {
+                        return {
+                            color: '#008040',
+                            weight: .5,
+                            fillOpacity: .5,
+                            fillColor: '#008040',
+                            interactive: false
+                        };
+                    }
+                }).addTo(map);
+         
+            });
+        }).done(function() {
+            var trailLayer = $.getJSON(trails, function(data) {
+                //console.log(data);
+				var ends = [];
+                geoJsonLayers.trailLayer = L.geoJson(data, {
+                    style: function(feature) {
+                        return {
+                            color: '#476b6b',
+                            weight: 1,
+                            interactive: false
+                        };
+                    }
+				
+                }).addTo(map);
 
-		var message = '<h2>University of Kentucky!</h2>Department of Geography';
+			
+			geoJsonLayers.trailLayer.eachLayer(function(layer) {
+				var trail = {
+					begin: layer.feature.geometry.coordinates[0],
+					end: layer.feature.geometry.coordinates[layer.feature.geometry.coordinates.length-1],
+					id: layer.feature.properties.OBJECTID,
+					name: layer.feature.properties.Name
+				}
+				trailPoints.push(trail);
+				addToObj(trailPoints, 'trails');
 
-		L.marker(map.getCenter())
-			.bindPopup(message)
-			.addTo(map)
-	</script>
+				
+			});
+			
 
-</body>
+            });
+			
+		
+        }).done(function() {
+            var breweryLayer = $.getJSON(breweries, function(data) {
+                //add neighboring counties to data layer in another color - won't use in proximity calc
+                    geoJsonLayers.breweryLayer = L.geoJson(data, {
+                        pointToLayer: function (feature, latlng) {
+                            return L.circleMarker(latlng);
+                        },
+                        style: function(feature) {
+                            return {
+                                color: '#ffffe6',
+                                fillColor:'#333300',
+                                weight: 1,
+                                fillOpacity: 1,
+                                radius: 5
+                            }
+                        }
+                    }).addTo(map);
+					
+            });
+			
+    });
 
-</html>
+	
+	
+		function calculateDistance(trails, point) {
+			
+			for(i=0; i < trails.length; i++) {
+		
+			}
+		}
+
+		function addToObj(obj, name) {
+			geoJsonLayers[name] = obj;
+		}
+
+        map.on('click', function(e) {
+        radiusCircle.setLatLng(e.latlng).addTo(map);
+    });
+
+    </script>
+
+    </body>
+    </html>
