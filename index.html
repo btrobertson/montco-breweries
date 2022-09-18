@@ -8,7 +8,9 @@
 	<link rel='icon' href='https://newmapsplus.github.io/favicon.ico' type='image/x-icon' />
 
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin="" />
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Reem+Kufi+Ink&display=swap" rel="stylesheet"> 
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 
 	<link href="https://fonts.googleapis.com/css?family=Quicksand:400,700" rel="stylesheet">
@@ -17,7 +19,7 @@
 		body {
 			margin: 0;
 			padding: 0;
-			font-family: 'Quicksand', sans-serif;
+			font-family: 'Reem Kufi Ink', sans-serif;
 			font-size: 100%;
 			color: #3d3d3d;
 		}
@@ -28,7 +30,7 @@
 			top: 10px;
 			left: 15px;
 			font-size: 1.5em;
-			font-family: 'Quicksand', sans-serif;
+			font-family: 'Reem Kufi Ink', sans-serif;
 			font-weight: 700;
 			letter-spacing: .04em;
 			padding: 10px 15px;
@@ -41,7 +43,7 @@
 		}
 
 		h2 {
-			font-family: 'Quicksand', sans-serif;
+			font-family: 'Reem Kufi Ink', sans-serif;
 			font-size: 1.2em;
 			letter-spacing: .04em;
 
@@ -140,7 +142,7 @@
 		<h4>Data sources</h4>
 		<p>Brewery data was obtained from <a href="http://www.poi-factory.com/node/21733">POI Factory</a></p>
 		<p>Counnty trails and parks data was obtained from <a href="https://data-montcopa.opendata.arcgis.com/" target="_blank">Montgomery County Pennsylvania Geospatial Data Hub</a></p>
-		<p>County boundary data was obtained from <a href="https://catalog.data.gov/dataset/tiger-line-shapefile-2016-state-pennsylvania-current-county-subdivision-state-based" target="_blank"> Census Bureau</a></p>
+		<p>County boundary data was obtained from the <a href="https://catalog.data.gov/dataset/tiger-line-shapefile-2016-state-pennsylvania-current-county-subdivision-state-based" target="_blank">US Census Bureau</a></p>
 		<p>Author: Brittany Robertson</p>
 	</section>
 
@@ -237,10 +239,6 @@
 			}
 		};
 
-   
-
-      
-
          //fetch counties
 		 fetch(geojsons.counties.data)
 			.then(function(response) {
@@ -275,7 +273,6 @@
 			} else {
 				throw new Error(`HTTP error!  status: ${response.status}`);
 			}	
-
 		})
 
 		.then(function(data) {
@@ -372,11 +369,6 @@
 		.catch(function (err) {
 			console.warn('Something went wrong.', err);
 		});
-
-
-
-
-	
 	
 		
 		function getTrails(e, trails) {
@@ -395,18 +387,16 @@
 			.then(function(data) {
 				var trailLayer = L.geoJson(data); 		
 				removeMarkers(trails);
-				map.setView(e.latlng, 13);
+				map.setView(e.latlng, 12);
 
 				trailLayer.eachLayer(function(layer){
-					var coords = layer.feature.geometry.coordinates[0];
-
-					if(coords.length > 2) {
-						coords = coords[0];
-					}
-					
-					var distance = e.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;	
+					var coords = layer.feature.geometry.coordinates;
+					var coords1 = coords[0];
+					var coords2 = coords[coords.length-1];
+					var distance1 = calculateDistance(e, coords1, true);
+					var distance2 = calculateDistance(e, coords2, false);
 						
-					if(distance < 5) {	
+					if(distance1 < 5 || distance2 < 5) {	
 												
 						layer.setStyle({
 							color: 'yellow',
@@ -431,6 +421,25 @@
 			}
 		}
 
+		function calculateDistance(point1, coords, begin) {
+			
+			if(coords.length > 2) {
+				if(begin){
+					coords = coords[0];
+				} else {
+					coords = coords[coords.length-1]
+				}
+			}
+			
+			var distance = point1.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;	
+
+			return distance;
+		}
+			
+			
+			
+
+		
      
     </script>
 
