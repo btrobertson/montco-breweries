@@ -160,7 +160,7 @@
 			}
 		}
 
-		var map = L.map('map', options);
+		const map = L.map('map', options);
 
 		// add zoom control to top right window position
 		L.control.zoom({
@@ -184,125 +184,164 @@
         map.addLayer(tiles);
 
         //data files
-        var breweries = 'data/montco_breweries.json';
-        var parks = 'data/Montgomery_County_Parks.json';
-        var trails = 'data/Montgomery_County_Trails.json';
-        var counties = 'data/county_boundaries.json';
+        const geojsons = {
+			breweries:{
+				data: breweries = 'data/montco_breweries.json',
+				props: {
+					color: '#ffffe6',
+					fillColor:'#333300',
+					weight: 1,
+					fillOpacity: 1,
+					radius: 5
+				}
+			},
+			parks: {
+				data: 'data/Montgomery_County_Parks.json',
+				props: {
+					color: '#008040',
+					weight: .5,
+					fillOpacity: .5,
+					fillColor: '#008040',
+					interactive: false
+				}
+			},
+			trails: {
+				data: 'data/Montgomery_County_Trails.json',
+				props: {
+					color: '#476b6b',
+					weight: 1,
+					interactive: false
+				}
+			},
+			counties: {
+				data: 'data/county_boundaries.json',
+				props: {
+					color: '#ddd',
+					weight: 1,
+					fillOpacity: 1,
+					fillColor: 'transparent',
+				}
+			}
+		};
 
-        var geoJsonLayers = {};
-		var trailPoints = [];
-        var radiusCircle = L.circle([0, 0], 5000, {
-            fillColor: 'pink',
-            fillOpacity: .5,
-            color: 'yellow',
-            opacity: .3,
-            stroke: false,
-            weight: 3,
-            interactive: false //allows users to click through the circle
-        });
+   
 
-        var countyLayer = $.getJSON(counties, function(data) {
-            var dataLayer = L.geoJson(data, {
-                    style: function(feature) {
-                        return {
-                            color: '#ddd',
-                            weight: 1,
-                            fillOpacity: 1,
-                            fillColor: 'transparent'
-                        };
-                    }
-                }).addTo(map);
-        });
-
-        $.when(countyLayer).done(function () {
-            var parksLayer = $.getJSON(parks, function(data) {
-                //console.log(data);
-                geoJsonLayers.parkLayer = L.geoJson(data, {
-                    style: function(feature) {
-                        return {
-                            color: '#008040',
-                            weight: .5,
-                            fillOpacity: .5,
-                            fillColor: '#008040',
-                            interactive: false
-                        };
-                    }
-                }).addTo(map);
-         
-            });
-        }).done(function(parksLayer) {
-            var trailLayer = $.getJSON(trails, function(data) {
-                //console.log(data);
-				var ends = [];
-                geoJsonLayers.trailLayer = L.geoJson(data, {
-                    style: function(feature) {
-                        return {
-                            color: '#476b6b',
-                            weight: 1,
-                            interactive: false
-                        };
-                    }
-				
-                }).addTo(map);
-
-		
-			
-
-            });
-			
-		
-        }).done(function(parksLayer) {
-            var breweryLayer = $.getJSON(breweries, function(data) {
-				var trailLayer;
-                //add neighboring counties to data layer in another color - won't use in proximity calc
-                    breweries= L.geoJson(data, {
-                        pointToLayer: function (feature, latlng) {
-                            return L.circleMarker(latlng);
-                        },
-                        style: function(feature) {
-                            return {
-                                color: '#ffffe6',
-                                fillColor:'#333300',
-                                weight: 1,
-                                fillOpacity: 1,
-                                radius: 5
-                            }
-                        }
-                    }).addTo(map);
-					var trailpoints = [];
-					var t = $.getJSON(trails, function(data) {
-						trailLayer = L.geoJson(data);
-					
-					});
-					var markers = [];
-					
-					breweries.on('click', function(e) {
-						removeMarkers(markers);
-						trailLayer.eachLayer(function(layer){
-							var coords = layer.feature.geometry.coordinates[0];
-							var distance = e.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;
-							if(distance < 5) {
-								
-								 layer.setStyle({
-									color: 'yellow'
-								}); 
-								var content = `<p>${layer.feature.properties.Name}</p>`;
-								//markers.push(L.circleMarker(L.latLng(coords[1], coords[0]), {radius:2}));
-								//markers[markers.length-1].bindTooltip(content).addTo(map);
-								layer.bindTooltip(content).addTo(map);
-        						
-        					
-							}
-
-						});
-					
-          
       
-					});
-            });
+
+         //fetch counties
+		 fetch(geojsons.counties.data)
+			.then(function(response) {
+				console.log(response);
+				if(response.ok) {
+					return response.json();
+				} else {
+					throw new Error(`HTTP error!  status: ${response.status}`);
+				}			
+			})
 			
-			
-    });
+			.then(function(data) {
+				const props = geojsons.counties.props;
+				const dataLayer = L.geoJson(data, {
+					style: function(feature) {
+						return {
+							color: props.color,
+							weight: props.weight,
+							fillOpacity: props.fillOpacity,
+							fillColor: props.fillColor
+						}
+					}
+				}).addTo(map);
+				//fetch park data
+				return fetch(geojsons.parks.data)
+			})
+
+		.then(function(response) {
+			console.log(response);
+			if(response.ok) {
+					return response.json();
+			} else {
+				throw new Error(`HTTP error!  status: ${response.status}`);
+			}	
+
+		})
+
+		.then(function(data) {
+				const props = geojsons.parks.props;
+				const dataLayer = L.geoJson(data, {
+					style: function(feature) {
+						return {
+							color: props.color,
+							weight: props.weight,
+							fillOpacity: props.fillOpacity,
+							fillColor: props.fillColor,
+							interactive: props.interactive
+						}
+					}
+				}).addTo(map);
+
+				return fetch(geojsons.trails.data)
+			})
+
+		.then(function(response) {
+			console.log(response);
+			if(response.ok) {
+					return response.json();
+			} else {
+				throw new Error(`HTTP error!  status: ${response.status}`);
+			}	
+
+		})
+
+		.then(function(data) {
+				const props = geojsons.trails.props;
+				const dataLayer = L.geoJson(data, {
+					style: function(feature) {
+						return {
+							color: props.color,
+							weight: props.weight,
+							interactive: props.interactive
+						}						
+					}
+				}).addTo(map);
+				//fetch brewery data
+				return fetch(geojsons.breweries.data)
+			})
+
+		.then(function(response) {
+			console.log(response);
+			if(response.ok) {
+					return response.json();
+			} else {
+				throw new Error(`HTTP error!  status: ${response.status}`);
+			}	
+
+		})
+
+		.then(function(data) {
+				const props = geojsons.breweries.props;
+				const dataLayer = L.geoJson(data, {
+					pointToLayer: function (feature, latlng) {	
+						return L.circleMarker(latlng);
+					},
+					style: function(feature) {
+						return {
+							color: props.color,
+							fillColor:props.fillColor,
+							weight: props.weight,
+							fillOpacity: props.fillOpacity,
+							radius: props.radius
+						}	
+					}
+				}).addTo(map);
+		})
+
+		// Catch any errors fetching the data
+		.catch(function (err) {
+			console.warn('Something went wrong.', err);
+		});
+
+
+
 
 	
 	
@@ -313,10 +352,17 @@
 			}
 		}
 
-		function addToObj(obj, name) {
-			geoJsonLayers[name] = obj;
+		function addTooltips(layers) {
+			layers.eachLayer(function(layer) {
+				var content = `<p>${layer.feature.properties.name}</p>`;
+				layer.bindTooltip(content).addTo(map);
+
+			});
+				
+			
 		}
 
+		
 		function removeMarkers(markers){
 			for(var i=0; i < markers.length; i++) {
 				markers[i].remove();
