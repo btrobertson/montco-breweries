@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset=utf-8 />
-	<title>What is my Title!</title>
+	<title>Trails near breweries in Montco</title>
 	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
 	<link rel='icon' href='https://newmapsplus.github.io/favicon.ico' type='image/x-icon' />
 
@@ -125,7 +125,7 @@
 
 <body>
 
-	<h1>Awesome map title!</h1>
+	<h1>Trails near breweries in Montgomery County, PA</h1>
 
 	<div id='map'></div>
 
@@ -134,7 +134,7 @@
 		<p>Additional information about <a href="#">the data</a> and map goes here. Lorem ipsum dolor sit amet,
 			consectetur adipiscing elit. Duis urna magna, maximus nec laoreet sit amet, dictum ultricies nibh. Ut id
 			auctor lacus. Nam a dolor et justo luctus luctus. </p>
-		<p>Map authored by me, MY NAME</p>
+		<p>Brittany Robertson</p>
 	</section>
 
 	<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
@@ -341,36 +341,65 @@
                             className: 'tooltip'
                         });
 						var markers = [];
-						var t = $.getJSON(geojsons.trails.data, function(data) {
-							trailLayer = L.geoJson(data);				
-						});
-                        layer.on('click', function (e) {							
+
+							
+                        layer.on('click', function (e) {
+						fetch(geojsons.trails.data)
+							.then(function(response) {
+								//console.log(response);
+								if(response.ok) {
+									return response.json();
+								} else {
+									throw new Error(`HTTP error!  status: ${response.status}`);
+								}			
+							})
+						
+						.then(function(data) {
+							trailLayer = L.geoJson(data);
+							
 							removeMarkers(markers);
 							map.setView(e.latlng, 13);
 							trailLayer.setStyle({
 								color: geojsons.trails.color,
 								weight: geojsons.trails.weight
 							}); 
+							
 							trailLayer.eachLayer(function(layer){
-							var coords = layer.feature.geometry.coordinates[0];
-							var distance = e.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;
+								
+								
+								var coords = layer.feature.geometry.coordinates[0];
+								if(coords.length > 2) {
+									coords = coords[0];
+								}
+								
+								var distance = e.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;
+					
+									
 							if(distance < 5) {								
-								 layer.setStyle({
-									color: 'yellow'
-								}); 
-
-								var content = `<p>${layer.feature.properties.Name}</p>`;
-								//markers.push(L.circleMarker(L.latLng(coords[1], coords[0]), {radius:2}));
-								//markers[markers.length-1].bindTooltip(content).addTo(map);
-								layer.bindTooltip(content).addTo(map);
-        						
-        					
+								layer.setStyle({
+								   color: 'yellow',
+								   weight: 2
+							   }); 
+							   layer.bringToFront().addTo(map);
+							   var content = `<p>${layer.feature.properties.Name}</p>`;
+							   
+							  // markers.push(L.circleMarker(L.latLng(coords[1], coords[0]), {radius:2}));
+							  // markers[markers.length-1].bindTooltip(content).addTo(map);
+							   layer.bindTooltip(content).addTo(map);
 							}
-						});
-					});
-					}
-				}).addTo(map);
-		})
+							   	
+							})
+							
+						})
+					
+					})
+				
+				}
+			}).addTo(map);
+			
+			})
+		
+		
 
 		// Catch any errors fetching the data
 		.catch(function (err) {
@@ -382,22 +411,7 @@
 
 	
 	
-		function calculateDistance(trails, point) {
-			
-			for(i=0; i < trails.length; i++) {
 		
-			}
-		}
-
-		function addTooltips(layers) {
-			layers.eachLayer(function(layer) {
-				var content = `<p>${layer.feature.properties.name}</p>`;
-				layer.bindTooltip(content).addTo(map);
-
-			});
-				
-			
-		}
 
 		
 		function removeMarkers(markers){
@@ -406,11 +420,7 @@
 			}
 		}
 
-        map.on('click', function(e) {
-        //radiusCircle.setLatLng(e.latlng).addTo(map);
-
-		
-    });
+        
 
     </script>
 
