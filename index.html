@@ -192,7 +192,10 @@
 					fillColor:'#333300',
 					weight: 1,
 					fillOpacity: 1,
-					radius: 5
+					radius: 5,
+					popup: function(name) {
+						return `<h3>${name}</h3>`
+					}
 				}
 			},
 			parks: {
@@ -231,7 +234,7 @@
          //fetch counties
 		 fetch(geojsons.counties.data)
 			.then(function(response) {
-				console.log(response);
+				//console.log(response);
 				if(response.ok) {
 					return response.json();
 				} else {
@@ -256,7 +259,7 @@
 			})
 
 		.then(function(response) {
-			console.log(response);
+			//console.log(response);
 			if(response.ok) {
 					return response.json();
 			} else {
@@ -283,7 +286,7 @@
 			})
 
 		.then(function(response) {
-			console.log(response);
+			//console.log(response);
 			if(response.ok) {
 					return response.json();
 			} else {
@@ -308,7 +311,7 @@
 			})
 
 		.then(function(response) {
-			console.log(response);
+			//console.log(response);
 			if(response.ok) {
 					return response.json();
 			} else {
@@ -331,6 +334,40 @@
 							fillOpacity: props.fillOpacity,
 							radius: props.radius
 						}	
+					},
+					onEachFeature: function(feature, layer) {
+						var popup = props.popup(feature.properties.name);
+                        layer.bindTooltip(popup, {
+                            className: 'tooltip'
+                        });
+						var markers = [];
+						var t = $.getJSON(geojsons.trails.data, function(data) {
+							trailLayer = L.geoJson(data);				
+						});
+                        layer.on('click', function (e) {							
+							removeMarkers(markers);
+							map.setView(e.latlng, 13);
+							trailLayer.setStyle({
+								color: geojsons.trails.color,
+								weight: geojsons.trails.weight
+							}); 
+							trailLayer.eachLayer(function(layer){
+							var coords = layer.feature.geometry.coordinates[0];
+							var distance = e.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;
+							if(distance < 5) {								
+								 layer.setStyle({
+									color: 'yellow'
+								}); 
+
+								var content = `<p>${layer.feature.properties.Name}</p>`;
+								//markers.push(L.circleMarker(L.latLng(coords[1], coords[0]), {radius:2}));
+								//markers[markers.length-1].bindTooltip(content).addTo(map);
+								layer.bindTooltip(content).addTo(map);
+        						
+        					
+							}
+						});
+					});
 					}
 				}).addTo(map);
 		})
