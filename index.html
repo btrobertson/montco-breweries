@@ -107,6 +107,11 @@
 				font-size: 1em;
 			}
 
+			h3 {
+				font-size: .8;
+				
+			}
+
 			.leaflet-popup-content {
 				font-family: 'Quicksand', sans-serif;
 				font-size: 0.9em;
@@ -125,13 +130,17 @@
 
 <body>
 
-	<h1>Trails near breweries in Montgomery County, PA</h1>
+	<h1>Trails near breweries <br>Montgomery County, PA</h1>
 
 	<div id='map'></div>
 
 	<section id="about">
-		<h2>About this</h2>
+		<h3>About the map</h3>
 		<p>This map highlights trails near breweries in Montgomery county, PA. Click a brewery marker to see which trails are within 5 kilometers. </p>
+		<h4>Data sources</h4>
+		<p>Brewery data was obtained from <a href="http://www.poi-factory.com/node/21733">POI Factory</a></p>
+		<p>Counnty trails and parks data was obtained from <a href="https://data-montcopa.opendata.arcgis.com/" target="_blank">Montgomery County Pennsylvania Geospatial Data Hub</a></p>
+		<p>County boundary data was obtained from <a href="https://catalog.data.gov/dataset/tiger-line-shapefile-2016-state-pennsylvania-current-county-subdivision-state-based" target="_blank"> Census Bureau</a></p>
 		<p>Author: Brittany Robertson</p>
 	</section>
 
@@ -147,14 +156,14 @@
 	<script>
         var options = {
 			center: [40.19690490954576, -75.3694704520256],
-			zoom: 10.5,
+			zoom: 10,
 			zoomControl: false
 		}
 
 		var locate_options = {
 			position: 'topright',
 			strings: {
-				title: "Show me where I am, yo!"
+				title: ""
 			}
 		}
 
@@ -191,8 +200,8 @@
 					weight: 1,
 					fillOpacity: 1,
 					radius: 5,
-					popup: function(name) {
-						return `<h3>${name}</h3>`
+					popup: function(name, website) {
+						return `<h3><a href=${website} target="_blank">${name}</a></h3>`
 					}
 				}
 			},
@@ -203,7 +212,10 @@
 					weight: .5,
 					fillOpacity: .5,
 					fillColor: '#008040',
-					interactive: false
+					interactive: false,
+					popup: function(name) {
+						return `<h3>${name}</h3>`
+					}
 				}
 			},
 			trails: {
@@ -278,6 +290,12 @@
 							interactive: props.interactive
 						}
 					}
+					/* onEachFeature: function(feature, layer) {
+						var popup = props.popup(feature.properties.Name);
+						layer.bindTooltip(popup, {
+							className: 'tooltip'
+						});
+					} */
 				}).addTo(map);
 
 				return fetch(geojsons.trails.data)
@@ -294,19 +312,19 @@
 		})
 
 		.then(function(data) {
-				const props = geojsons.trails.props;
-				const dataLayer = L.geoJson(data, {
-					style: function(feature) {
-						return {
-							color: props.color,
-							weight: props.weight,
-							interactive: props.interactive
-						}						
-					}
-				}).addTo(map);
-				//fetch brewery data
-				return fetch(geojsons.breweries.data)
-			})
+			const props = geojsons.trails.props;
+			const dataLayer = L.geoJson(data, {
+				style: function(feature) {
+					return {
+						color: props.color,
+						weight: props.weight,
+						interactive: props.interactive
+					}						
+				}
+			}).addTo(map);
+			//fetch brewery data
+			return fetch(geojsons.breweries.data)
+		})
 
 		.then(function(response) {
 			//console.log(response);
@@ -319,42 +337,36 @@
 		})
 
 		.then(function(data) {
-				const props = geojsons.breweries.props;
-				var trails = [];
-				
-				const dataLayer = L.geoJson(data, {
-					pointToLayer: function (feature, latlng) {	
-						return L.circleMarker(latlng);
-					},
-					style: function(feature) {
-						return {
-							color: props.color,
-							fillColor:props.fillColor,
-							weight: props.weight,
-							fillOpacity: props.fillOpacity,
-							radius: props.radius
-						}	
-					},
-					onEachFeature: function(feature, layer) {
-						var popup = props.popup(feature.properties.name);
-                        layer.bindTooltip(popup, {
-                            className: 'tooltip'
-                        });
-						
-						
-                        layer.on('click', function (e) {
-						
-							getTrails(e, trails);
-						})
-					
-					//})
-				
+			const props = geojsons.breweries.props;
+			var trails = [];
+			
+			const dataLayer = L.geoJson(data, {
+				pointToLayer: function (feature, latlng) {	
+					return L.circleMarker(latlng);
+				},
+				style: function(feature) {
+					return {
+						color: props.color,
+						fillColor:props.fillColor,
+						weight: props.weight,
+						fillOpacity: props.fillOpacity,
+						radius: props.radius
+					}	
+				},
+				onEachFeature: function(feature, layer) {
+					var popup = props.popup(feature.properties.name, feature.properties.website);
+					layer.bindTooltip(popup, {
+						className: 'tooltip'
+					});
+
+					layer.on('click', function (e) {						
+						getTrails(e, trails);
+					})
+			
 				}
 			}).addTo(map);
 			
-			})
-		
-		
+		})
 
 		// Catch any errors fetching the data
 		.catch(function (err) {
@@ -369,6 +381,7 @@
 		
 		function getTrails(e, trails) {
 			var markers = [];
+
 			fetch(geojsons.trails.data)
 				.then(function(response) {
 					//console.log(response);
@@ -380,40 +393,37 @@
 				})
 			
 			.then(function(data) {
-				trailLayer = L.geoJson(data); 
-				
+				var trailLayer = L.geoJson(data); 		
 				removeMarkers(trails);
 				map.setView(e.latlng, 13);
 
 				trailLayer.eachLayer(function(layer){
-					
-					
-					
 					var coords = layer.feature.geometry.coordinates[0];
+
 					if(coords.length > 2) {
 						coords = coords[0];
 					}
 					
-					var distance = e.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;
-		
+					var distance = e.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;	
 						
-				if(distance < 5) {	
-											
-					layer.setStyle({
-						color: 'yellow',
-						weight: 2
-					}); 
-					trails.push(layer.bringToFront().addTo(map));
-					var content = `<p>${layer.feature.properties.Name}</p>`;
-					
-					// markers.push(L.circleMarker(L.latLng(coords[1], coords[0]), {radius:2}));
-					// markers[markers.length-1].bindTooltip(content).addTo(map);
-					layer.bindTooltip(content).addTo(map);
-				}
+					if(distance < 5) {	
+												
+						layer.setStyle({
+							color: 'yellow',
+							weight: 2
+						});
+
+						trails.push(layer.bringToFront().addTo(map));
+						var content = `<p>${layer.feature.properties.Name}</p>`;
+						layer.bindTooltip(content).addTo(map);
+					}
 					
 				})
-		});
+			}).catch(function (err) {
+				console.warn('Something went wrong.', err);
+			});
 		}
+
 		
 		function removeMarkers(markers){
 			for(var i=0; i < markers.length; i++) {
@@ -421,9 +431,8 @@
 			}
 		}
 
-        
-
+     
     </script>
 
-    </body>
-    </html>
+</body>
+</html>
