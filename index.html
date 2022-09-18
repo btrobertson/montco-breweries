@@ -320,6 +320,8 @@
 
 		.then(function(data) {
 				const props = geojsons.breweries.props;
+				var trails = [];
+				
 				const dataLayer = L.geoJson(data, {
 					pointToLayer: function (feature, latlng) {	
 						return L.circleMarker(latlng);
@@ -338,59 +340,14 @@
                         layer.bindTooltip(popup, {
                             className: 'tooltip'
                         });
-						var markers = [];
-
-							
-                        layer.on('click', function (e) {
-						fetch(geojsons.trails.data)
-							.then(function(response) {
-								//console.log(response);
-								if(response.ok) {
-									return response.json();
-								} else {
-									throw new Error(`HTTP error!  status: ${response.status}`);
-								}			
-							})
 						
-						.then(function(data) {
-							trailLayer = L.geoJson(data);
-							
-							removeMarkers(markers);
-							map.setView(e.latlng, 13);
-							trailLayer.setStyle({
-								color: geojsons.trails.color,
-								weight: geojsons.trails.weight
-							}); 
-							
-							trailLayer.eachLayer(function(layer){
-								
-								
-								var coords = layer.feature.geometry.coordinates[0];
-								if(coords.length > 2) {
-									coords = coords[0];
-								}
-								
-								var distance = e.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;
-					
-									
-							if(distance < 5) {								
-								layer.setStyle({
-								   color: 'yellow',
-								   weight: 2
-							   }); 
-							   layer.bringToFront().addTo(map);
-							   var content = `<p>${layer.feature.properties.Name}</p>`;
-							   
-							  // markers.push(L.circleMarker(L.latLng(coords[1], coords[0]), {radius:2}));
-							  // markers[markers.length-1].bindTooltip(content).addTo(map);
-							   layer.bindTooltip(content).addTo(map);
-							}
-							   	
-							})
-							
+						
+                        layer.on('click', function (e) {
+						
+							getTrails(e, trails);
 						})
 					
-					})
+					//})
 				
 				}
 			}).addTo(map);
@@ -410,7 +367,53 @@
 	
 	
 		
+		function getTrails(e, trails) {
+			var markers = [];
+			fetch(geojsons.trails.data)
+				.then(function(response) {
+					//console.log(response);
+					if(response.ok) {
+						return response.json();
+					} else {
+						throw new Error(`HTTP error!  status: ${response.status}`);
+					}			
+				})
+			
+			.then(function(data) {
+				trailLayer = L.geoJson(data); 
+				
+				removeMarkers(trails);
+				map.setView(e.latlng, 13);
 
+				trailLayer.eachLayer(function(layer){
+					
+					
+					
+					var coords = layer.feature.geometry.coordinates[0];
+					if(coords.length > 2) {
+						coords = coords[0];
+					}
+					
+					var distance = e.latlng.distanceTo(L.latLng(coords[1], coords[0])) / 1000;
+		
+						
+				if(distance < 5) {	
+											
+					layer.setStyle({
+						color: 'yellow',
+						weight: 2
+					}); 
+					trails.push(layer.bringToFront().addTo(map));
+					var content = `<p>${layer.feature.properties.Name}</p>`;
+					
+					// markers.push(L.circleMarker(L.latLng(coords[1], coords[0]), {radius:2}));
+					// markers[markers.length-1].bindTooltip(content).addTo(map);
+					layer.bindTooltip(content).addTo(map);
+				}
+					
+				})
+		});
+		}
 		
 		function removeMarkers(markers){
 			for(var i=0; i < markers.length; i++) {
