@@ -82,7 +82,20 @@
 		.max-image-width {
 			width: 100%;
 		}
+		
+		.leaflet-popup-content {
+			font-family: 'Reem Kufi Ink', sans-serif;
+		}
 	
+		.leaflet-popup-content h3, .tooltip h3 {
+			font-size: 1em;
+			margin-bottom: 0;
+		}
+
+		.leaflet-popup-content p, .tooltip p {
+			line-height: 1em;
+		}
+
 		@media screen and (orientation : landscape) {
 			#map {
 			width: 100%;
@@ -93,8 +106,8 @@
 			}
 			
 			.first-column {
-			grid-column: 1 / 2;
-			grid-row: 3;
+				grid-column: 1 / 2;
+				grid-row: 3;
 			}
 
 			.second-column {
@@ -103,23 +116,13 @@
 			}
 
 			button {
-			width: 15%;
-			margin: 10px 0;
+				width: 15%;
+				margin: 10px 0;
 			}
 	
 		}
 	
-		.leaflet-popup-content {
-			font-family: 'Reem Kufi Ink', sans-serif;
-		}
-	
-		.leaflet-popup-content h3 {
-			font-size: 1.3em;
-		}
-
-		.leaflet-popup-content p {
-			line-height: 1em;
-		}
+		
 	</style>
 </head>
 
@@ -197,7 +200,7 @@
 					fillOpacity: 1,
 					radius: 5,
 					popup: function(name, website) {
-						return `<h3>${name}</h3><a href=${website} target="_blank">${website}</a>`
+						return `<h3>${name}</h3><p><a href=${website} target="_blank">${website}</a></p>`
 					}
 				}
 			},
@@ -277,16 +280,16 @@
 							color: props.color,
 							weight: props.weight,
 							fillOpacity: props.fillOpacity,
-							fillColor: props.fillColor,
-							interactive: props.interactive
+							fillColor: props.fillColor
+							
 						}
-					}
-					/* onEachFeature: function(feature, layer) {
+					},
+					onEachFeature: function(feature, layer) {
 						var popup = props.popup(feature.properties.Name);
 						layer.bindTooltip(popup, {
 							className: 'tooltip'
 						});
-					} */
+					} 
 				}).addTo(map);
 
 				return fetch(geojsons.trails.data)
