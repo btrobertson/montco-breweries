@@ -140,7 +140,7 @@
 		<div class="first-column">
 			<h2>About the map</h2>
 			<p>Author: Brittany Robertson</p>
-			<p>This map highlights trails near breweries in Montgomery county, PA. Click a brewery marker to see which trails are within 5 kilometers. Click a highlighted trail to view trail name.</p>
+			<p>This map highlights trails near breweries in Montgomery county, PA, where I live. My family always enjoys visiting a local brewery after a run or hike.  Click a brewery marker to see which trails are within 5 kilometers. Click a highlighted trail to view trail name.</p>
 			
 			<h3>Data sources</h3>
 			<p>Brewery data was obtained from <a href="http://www.poi-factory.com/node/21733">POI Factory.</a><br>
@@ -231,7 +231,8 @@
 			trails: {
 				data: 'data/Montgomery_County_Trails.json',
 				props: {
-					color: '#476b6b',
+					//color: '#476b6b',
+					color: '#ffbf80',
 					weight: 1,
 					interactive: false
 				}
@@ -385,12 +386,12 @@
 
 					layer.on('click', function (e) {						
 						getTrails(e, trails);
-						//layer.bindPopup(popup).addTo(map);
 					})			
 				}				
 			}).addTo(map);
-		
+			
 		})
+		
 
 		// Catch any errors fetching the data
 		.catch(function (err) {
@@ -401,7 +402,7 @@
 		function getTrails(e, trails) {
 			var markers = [];
 
-			fetch(geojsons.trails.data)
+			fetch('data/montco-trail-length.json')
 				.then(function(response) {
 					//console.log(response);
 					if(response.ok) {
@@ -415,16 +416,16 @@
 				var trailLayer = L.geoJson(data); 		
 				removeMarkers(trails);
 				map.setView(e.latlng, 12);
-
+				
 				trailLayer.eachLayer(function(layer){
 					var coords = layer.feature.geometry.coordinates;
 					var coords1 = coords[0];
 					var coords2 = coords[coords.length-1];
 					var distance1 = calculateDistance(e, coords1, true);
 					var distance2 = calculateDistance(e, coords2, false);
-						
-					if(distance1 < 5 || distance2 < 5) {	
-												
+					
+
+					if(distance1 < 5 || distance2 < 5) {					
 						layer.setStyle({
 							color: 'yellow',
 							weight: 2
@@ -445,14 +446,18 @@
                         });
 
 						trails.push(layer.bringToFront().addTo(map));
-						var content = `<p>${layer.feature.properties.Name}</p>`;
+						var content = `<p>${layer.feature.properties.Name}</p><p>Length: ${layer.feature.properties.length.toFixed(2)} km</p>`;
 						layer.bindPopup(content).addTo(map);
 					}
 					
 				})
+				
+				
 			}).catch(function (err) {
 				console.warn('Something went wrong.', err);
 			});
+			
+			
 		}
 
 		
